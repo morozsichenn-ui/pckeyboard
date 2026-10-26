@@ -1,0 +1,292 @@
+local UserInputService = game:GetService("UserInputService")
+local ContextActionService = game:GetService("ContextActionService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local Players = game:GetService("Players")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local KEY_BASE = 38
+local KEY_GAP = 4
+local BG_COLOR      = Color3.fromRGB(28, 28, 34)
+local KEY_COLOR     = Color3.fromRGB(55, 55, 65)
+local KEY_PRESSED   = Color3.fromRGB(255, 255, 255)
+local TEXT_COLOR    = Color3.fromRGB(230, 230, 230)
+local PRESSED_TEXT  = Color3.fromRGB(0, 0, 0)
+local TOGGLE_ON     = Color3.fromRGB(80, 120, 200)
+local TOGGLE_OFF    = Color3.fromRGB(45, 45, 55)
+
+local ROWS = {
+	{
+		{"Esc", Enum.KeyCode.Escape, 1}, {"F1", Enum.KeyCode.F1, 1}, {"F2", Enum.KeyCode.F2, 1},
+		{"F3", Enum.KeyCode.F3, 1}, {"F4", Enum.KeyCode.F4, 1}, {"F5", Enum.KeyCode.F5, 1},
+		{"F6", Enum.KeyCode.F6, 1}, {"F7", Enum.KeyCode.F7, 1}, {"F8", Enum.KeyCode.F8, 1},
+		{"F9", Enum.KeyCode.F9, 1}, {"F10", Enum.KeyCode.F10, 1}, {"F11", Enum.KeyCode.F11, 1},
+		{"F12", Enum.KeyCode.F12, 1},
+	},
+	{
+		{"`", Enum.KeyCode.Backquote, 1}, {"1", Enum.KeyCode.One, 1}, {"2", Enum.KeyCode.Two, 1},
+		{"3", Enum.KeyCode.Three, 1}, {"4", Enum.KeyCode.Four, 1}, {"5", Enum.KeyCode.Five, 1},
+		{"6", Enum.KeyCode.Six, 1}, {"7", Enum.KeyCode.Seven, 1}, {"8", Enum.KeyCode.Eight, 1},
+		{"9", Enum.KeyCode.Nine, 1}, {"0", Enum.KeyCode.Zero, 1}, {"-", Enum.KeyCode.Minus, 1},
+		{"=", Enum.KeyCode.Equals, 1}, {"Backspace", Enum.KeyCode.Backspace, 2},
+	},
+	{
+		{"Tab", Enum.KeyCode.Tab, 1.5}, {"Q", Enum.KeyCode.Q, 1}, {"W", Enum.KeyCode.W, 1},
+		{"E", Enum.KeyCode.E, 1}, {"R", Enum.KeyCode.R, 1}, {"T", Enum.KeyCode.T, 1},
+		{"Y", Enum.KeyCode.Y, 1}, {"U", Enum.KeyCode.U, 1}, {"I", Enum.KeyCode.I, 1},
+		{"O", Enum.KeyCode.O, 1}, {"P", Enum.KeyCode.P, 1}, {"[", Enum.KeyCode.LeftBracket, 1},
+		{"]", Enum.KeyCode.RightBracket, 1}, {"\\", Enum.KeyCode.BackSlash, 1.5},
+	},
+	{
+		{"Caps", Enum.KeyCode.CapsLock, 1.8}, {"A", Enum.KeyCode.A, 1}, {"S", Enum.KeyCode.S, 1},
+		{"D", Enum.KeyCode.D, 1}, {"F", Enum.KeyCode.F, 1}, {"G", Enum.KeyCode.G, 1},
+		{"H", Enum.KeyCode.H, 1}, {"J", Enum.KeyCode.J, 1}, {"K", Enum.KeyCode.K, 1},
+		{"L", Enum.KeyCode.L, 1}, {";", Enum.KeyCode.Semicolon, 1}, {"'", Enum.KeyCode.Quote, 1},
+		{"Enter", Enum.KeyCode.Return, 2.2},
+	},
+	{
+		{"LShift", Enum.KeyCode.LeftShift, 2.3}, {"Z", Enum.KeyCode.Z, 1}, {"X", Enum.KeyCode.X, 1},
+		{"C", Enum.KeyCode.C, 1}, {"V", Enum.KeyCode.V, 1}, {"B", Enum.KeyCode.B, 1},
+		{"N", Enum.KeyCode.N, 1}, {"M", Enum.KeyCode.M, 1}, {",", Enum.KeyCode.Comma, 1},
+		{".", Enum.KeyCode.Period, 1}, {"/", Enum.KeyCode.Slash, 1},
+		{"RShift", Enum.KeyCode.RightShift, 2.3},
+	},
+	{
+		{"LCtrl", Enum.KeyCode.LeftControl, 1.5}, {"LAlt", Enum.KeyCode.LeftAlt, 1.2},
+		{"Space", Enum.KeyCode.Space, 6}, {"RAlt", Enum.KeyCode.RightAlt, 1.2},
+		{"RCtrl", Enum.KeyCode.RightControl, 1.5},
+		{"Insert", Enum.KeyCode.Insert, 1.3}, {"Home", Enum.KeyCode.Home, 1.3},
+		{"PgUp", Enum.KeyCode.PageUp, 1.3},
+		{"Del", Enum.KeyCode.Delete, 1.3}, {"End", Enum.KeyCode.End, 1.3},
+		{"PgDn", Enum.KeyCode.PageDown, 1.3},
+	},
+	{
+		{"\u{2191}", Enum.KeyCode.Up, 1}, {"\u{2190}", Enum.KeyCode.Left, 1},
+		{"\u{2193}", Enum.KeyCode.Down, 1}, {"\u{2192}", Enum.KeyCode.Right, 1},
+	},
+}
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "PCKeyboardGui"
+screenGui.ResetOnSpawn = false
+screenGui.IgnoreGuiInset = true
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.DisplayOrder = 999
+screenGui.Parent = playerGui
+
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Name = "ToggleBtn"
+toggleBtn.Size = UDim2.fromOffset(150, 46)
+toggleBtn.Position = UDim2.new(0, 12, 0, 60)
+toggleBtn.BackgroundColor3 = TOGGLE_OFF
+toggleBtn.BorderSizePixel = 0
+toggleBtn.Text = "PC Keyboard"
+toggleBtn.TextColor3 = TEXT_COLOR
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.TextSize = 15
+toggleBtn.AutoButtonColor = false
+toggleBtn.Active = true
+toggleBtn.Parent = screenGui
+
+local tc = Instance.new("UICorner")
+tc.CornerRadius = UDim.new(0, 10)
+tc.Parent = toggleBtn
+
+local toggleStroke = Instance.new("UIStroke")
+toggleStroke.Color = Color3.fromRGB(255, 255, 255)
+toggleStroke.Thickness = 0
+toggleStroke.Parent = toggleBtn
+
+local dragging = false
+local dragStart, startPos
+
+toggleBtn.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1
+		or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = toggleBtn.Position
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if not dragging then return end
+	if input.UserInputType == Enum.UserInputType.MouseMovement
+		or input.UserInputType == Enum.UserInputType.Touch then
+		local delta = input.Position - dragStart
+		toggleBtn.Position = UDim2.new(
+			startPos.X.Scale, startPos.X.Offset + delta.X,
+			startPos.Y.Scale, startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1
+		or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = false
+	end
+end)
+
+local kbFrame = Instance.new("Frame")
+kbFrame.Name = "KeyboardFrame"
+kbFrame.AnchorPoint = Vector2.new(0.5, 1)
+kbFrame.Position = UDim2.new(0.5, 0, 1, -10)
+kbFrame.BackgroundColor3 = BG_COLOR
+kbFrame.BackgroundTransparency = 0.05
+kbFrame.BorderSizePixel = 0
+kbFrame.Visible = false
+kbFrame.ClipsDescendants = true
+kbFrame.Parent = screenGui
+
+local kc = Instance.new("UICorner")
+kc.CornerRadius = UDim.new(0, 10)
+kc.Parent = kbFrame
+
+local pad = Instance.new("UIPadding")
+pad.PaddingTop = UDim.new(0, 6)
+pad.PaddingBottom = UDim.new(0, 6)
+pad.PaddingLeft = UDim.new(0, 6)
+pad.PaddingRight = UDim.new(0, 6)
+pad.Parent = kbFrame
+
+local kbList = Instance.new("UIListLayout")
+kbList.FillDirection = Enum.FillDirection.Vertical
+kbList.Padding = UDim.new(0, KEY_GAP)
+kbList.SortOrder = Enum.SortOrder.LayoutOrder
+kbList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+kbList.Parent = kbFrame
+
+local activeKeys = {}
+
+local function fireKey(keyCode, isPressed)
+	pcall(function()
+		VirtualInputManager:SendKeyEvent(isPressed, keyCode, false, game)
+	end)
+	pcall(function()
+		ContextActionService:SetState(keyCode.Name, isPressed and Enum.UserInputState.Begin or Enum.UserInputState.End)
+	end)
+end
+
+local function pressKey(keyCode)
+	if activeKeys[keyCode] then return end
+	activeKeys[keyCode] = true
+	fireKey(keyCode, true)
+end
+
+local function releaseKey(keyCode)
+	if not activeKeys[keyCode] then return end
+	activeKeys[keyCode] = nil
+	fireKey(keyCode, false)
+end
+
+local function rebuildKeyboard()
+	local viewport = workspace.CurrentCamera.ViewportSize
+	local maxWidth = math.min(viewport.X * 0.96, 950)
+
+	local padding = 12
+	local maxRowUnits = 0
+	for _, row in ipairs(ROWS) do
+		local total = 0
+		for _, k in ipairs(row) do total += k[3] end
+		maxRowUnits = math.max(maxRowUnits, total)
+	end
+
+	local widthAtBase = maxRowUnits * KEY_BASE + (maxRowUnits - 1) * KEY_GAP + padding
+	local scale = math.min(1, maxWidth / widthAtBase)
+	local keySize = math.max(20, math.floor(KEY_BASE * scale))
+	local fontSize = math.clamp(math.floor(14 * scale), 8, 16)
+
+	for _, child in ipairs(kbFrame:GetChildren()) do
+		if child:IsA("Frame") and child.Name:match("^Row") then
+			child:Destroy()
+		end
+	end
+
+	for r, row in ipairs(ROWS) do
+		local rowFrame = Instance.new("Frame")
+		rowFrame.Name = "Row" .. r
+		rowFrame.BackgroundTransparency = 1
+		rowFrame.Size = UDim2.new(1, -padding, 0, keySize)
+		rowFrame.LayoutOrder = r
+		rowFrame.Parent = kbFrame
+
+		local rl = Instance.new("UIListLayout")
+		rl.FillDirection = Enum.FillDirection.Horizontal
+		rl.Padding = UDim.new(0, KEY_GAP)
+		rl.HorizontalAlignment = Enum.HorizontalAlignment.Center
+		rl.SortOrder = Enum.SortOrder.LayoutOrder
+		rl.Parent = rowFrame
+
+		for i, keyData in ipairs(row) do
+			local label, keyCode, units = keyData[1], keyData[2], keyData[3]
+
+			local key = Instance.new("TextButton")
+			key.Name = "Key_" .. label
+			key.Size = UDim2.fromOffset(
+				math.floor(keySize * units + (units - 1) * KEY_GAP),
+				keySize
+			)
+			key.BackgroundColor3 = KEY_COLOR
+			key.BorderSizePixel = 0
+			key.Text = label
+			key.TextColor3 = TEXT_COLOR
+			key.Font = Enum.Font.Gotham
+			key.TextSize = fontSize
+			key.AutoButtonColor = false
+			key.LayoutOrder = i
+			key.Parent = rowFrame
+
+			local corner = Instance.new("UICorner")
+			corner.CornerRadius = UDim.new(0, 5)
+			corner.Parent = key
+
+			local isDown = false
+			local function doPress()
+				if isDown then return end
+				isDown = true
+				key.BackgroundColor3 = KEY_PRESSED
+				key.TextColor3 = PRESSED_TEXT
+				pressKey(keyCode)
+			end
+			local function doRelease()
+				if not isDown then return end
+				isDown = false
+				key.BackgroundColor3 = KEY_COLOR
+				key.TextColor3 = TEXT_COLOR
+				releaseKey(keyCode)
+			end
+
+			key.MouseButton1Down:Connect(doPress)
+			key.MouseButton1Up:Connect(doRelease)
+			key.MouseLeave:Connect(doRelease)
+		end
+	end
+
+	kbFrame.Size = UDim2.new(
+		0,
+		maxRowUnits * keySize + (maxRowUnits - 1) * KEY_GAP + padding,
+		0,
+		#ROWS * keySize + (#ROWS - 1) * KEY_GAP + padding
+	)
+end
+
+local isOpen = false
+local function setOpen(v)
+	isOpen = v
+	kbFrame.Visible = v
+	toggleStroke.Thickness = v and 2 or 0
+	toggleBtn.BackgroundColor3 = v and TOGGLE_ON or TOGGLE_OFF
+end
+
+toggleBtn.MouseButton1Click:Connect(function()
+	setOpen(not isOpen)
+end)
+
+workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
+	rebuildKeyboard()
+end)
+
+rebuildKeyboard()
+setOpen(false)
