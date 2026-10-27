@@ -2,6 +2,7 @@ local UserInputService = game:GetService("UserInputService")
 local ContextActionService = game:GetService("ContextActionService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -15,6 +16,8 @@ local TEXT_COLOR    = Color3.fromRGB(230, 230, 230)
 local PRESSED_TEXT  = Color3.fromRGB(0, 0, 0)
 local TOGGLE_ON     = Color3.fromRGB(80, 120, 200)
 local TOGGLE_OFF    = Color3.fromRGB(45, 45, 55)
+
+local TOP_Z = 2147483647
 
 local ROWS = {
 	{
@@ -72,8 +75,16 @@ screenGui.Name = "PCKeyboardGui"
 screenGui.ResetOnSpawn = false
 screenGui.IgnoreGuiInset = true
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-screenGui.DisplayOrder = 999
-screenGui.Parent = playerGui
+screenGui.DisplayOrder = TOP_Z
+
+local parented = false
+pcall(function()
+	screenGui.Parent = CoreGui
+	parented = true
+end)
+if not parented then
+	screenGui.Parent = playerGui
+end
 
 local toggleBtn = Instance.new("TextButton")
 toggleBtn.Name = "ToggleBtn"
@@ -87,6 +98,7 @@ toggleBtn.Font = Enum.Font.GothamBold
 toggleBtn.TextSize = 15
 toggleBtn.AutoButtonColor = false
 toggleBtn.Active = true
+toggleBtn.ZIndex = TOP_Z
 toggleBtn.Parent = screenGui
 
 local tc = Instance.new("UICorner")
@@ -138,6 +150,7 @@ kbFrame.BackgroundTransparency = 0.05
 kbFrame.BorderSizePixel = 0
 kbFrame.Visible = false
 kbFrame.ClipsDescendants = true
+kbFrame.ZIndex = TOP_Z
 kbFrame.Parent = screenGui
 
 local kc = Instance.new("UICorner")
@@ -210,6 +223,7 @@ local function rebuildKeyboard()
 		rowFrame.BackgroundTransparency = 1
 		rowFrame.Size = UDim2.new(1, -padding, 0, keySize)
 		rowFrame.LayoutOrder = r
+		rowFrame.ZIndex = TOP_Z
 		rowFrame.Parent = kbFrame
 
 		local rl = Instance.new("UIListLayout")
@@ -236,6 +250,7 @@ local function rebuildKeyboard()
 			key.TextSize = fontSize
 			key.AutoButtonColor = false
 			key.LayoutOrder = i
+			key.ZIndex = TOP_Z
 			key.Parent = rowFrame
 
 			local corner = Instance.new("UICorner")
